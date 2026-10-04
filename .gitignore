@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Compiled cache & temporary artifacts
+cache/pdf/*.pdf
+cache/pdf/*.json
+cache/pdf/*.aux
+cache/pdf/*.log
+!cache/pdf/.gitkeep
+
+# Precompiled OS-specific binaries (51MB Windows binary; Linux/Docker installs via Dockerfile/curl)
+bin/tectonic.exe
+bin/tectonic
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-workspace
+*.swp
+
+# Logs
+logs/
+*.log

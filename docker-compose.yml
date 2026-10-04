@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  latex-studio-pro:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: latex_studio_pro
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - latex_cache:/app/cache/pdf
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+volumes:
+  latex_cache:
+    driver: local

@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hyperleaf | Next-Generation LaTeX Workspace & Editor</title>
+  <meta name="description" content="Hyperleaf is a high-performance, local & cloud-ready LaTeX workspace with instant 0ms compilation caching, multi-project management, asset uploads, and PDF.js canvas preview.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <!-- Modern Typography: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- PDF.js for crisp, native canvas rendering without iframe scroll issues -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- JSZip for 1-click full project archive export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- Ace Code Editor -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/mode-latex.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/theme-dracula.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/theme-chrome.min.js"></script>
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header (Website & Studio Navbar) -->
+  <header class="app-header">
+    <div class="header-left">
+      <!-- Brand Logo & Name -->
+      <div class="brand-section" id="btnBrandHome" role="button" title="Hyperleaf Home">
+        <div class="brand-logo">
+          <img src="favicon.svg" alt="Hyperleaf Logo" width="24" height="24">
+        </div>
+        <div class="brand-info">
+          <div class="brand-title">
+            <span>Hyperleaf</span>
+            <span class="brand-version">v3.5 PRO</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Website Navigation Links (Visible in Home/Website Mode) -->
+      <nav class="website-nav-links" id="websiteNavLinks">
+        <a href="#sectionProjects" class="web-nav-link" id="linkNavProjects"><i class="fa-solid fa-folder-open"></i> Documents</a>
+        <a href="#sectionTemplates" class="web-nav-link" id="linkNavTemplates"><i class="fa-solid fa-shapes"></i> Templates</a>
+        <a href="#sectionCheatsheet" class="web-nav-link" id="linkNavCheatsheet"><i class="fa-solid fa-book-bookmark"></i> Cheatsheet</a>
+        <a href="#sectionFeatures" class="web-nav-link" id="linkNavFeatures"><i class="fa-solid fa-wand-magic-sparkles"></i> Features</a>
+      </nav>
+
+      <!-- Active Project Switcher (Visible in Studio Mode) -->
+      <div class="project-switcher-group" id="projectSwitcherNav" style="display: none;">
+        <div class="tool-dropdown">
+          <button class="project-pill-btn" id="btnProjectMenu" title="Manage Projects">
+            <i class="fa-solid fa-folder-open"></i>
+            <span id="currentProjectTitle">My Project</span>
+            <i class="fa-solid fa-chevron-down caret"></i>
+          </button>
+          <div class="dropdown-menu project-menu" id="projectDropdownMenu">
+            <div class="dropdown-header">
+              <span>Workspace Projects</span>
+              <button class="btn btn-sm btn-primary" id="btnQuickNewProject">
+                <i class="fa-solid fa-plus"></i> New
+              </button>
+            </div>
+            <div class="project-items-list" id="projectItemsList"></div>
+            <div class="dropdown-footer">
+              <button class="dropdown-item" id="btnOpenProjectsModal">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Manage All Projects...</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Status / Performance Indicator -->
+    <div class="header-center">
+      <div class="engine-badge" id="engineStatusBadge" title="Sandboxed XeTeX Compiler">
+        <span class="engine-pulse" id="enginePulse"></span>
+        <span id="engineStatusText">XeTeX Sandboxed</span>
+      </div>
+      <div class="speed-badge" id="speedBadge" title="Compilation Cache Speed">
+        <i class="fa-solid fa-bolt"></i>
+        <span id="speedBadgeText">Instant 0ms</span>
+      </div>
+    </div>
+
+    <!-- Header Action Buttons -->
+    <div class="header-actions">
+      <!-- Website Home CTA Button (Visible on Home Page) -->
+      <button class="btn btn-primary btn-launch-studio-header" id="btnHeaderLaunchStudio" title="Launch the LaTeX IDE Editor">
+        <i class="fa-solid fa-rocket"></i>
+        <span>Launch Studio</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+
+      <!-- Studio Actions (Visible only when in Studio Mode) -->
+      <div class="studio-actions-group" id="studioHeaderActions" style="display: none;">
+        <button class="btn btn-secondary" id="btnBackToDashboard" title="Return to Website Home">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Home</span>
+        </button>
+
+        <div class="view-split-group" title="Workspace Layout">
+          <button class="split-btn" id="btnViewEditorOnly" title="Editor Only">
+            <i class="fa-solid fa-code"></i>
+          </button>
+          <button class="split-btn active" id="btnViewSplit" title="Split View (50/50)">
+            <i class="fa-solid fa-table-columns"></i>
+          </button>
+          <button class="split-btn" id="btnViewPdfOnly" title="PDF Preview Only">
+            <i class="fa-solid fa-file-pdf"></i>
+          </button>
+        </div>
+
+        <label class="auto-compile-toggle" title="Auto-compile after typing pauses (1.5s)">
+          <input type="checkbox" id="chkAutoCompile">
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">Auto-run</span>
+        </label>
+
+        <button class="btn btn-secondary" id="btnOpenTemplates" title="Browse templates">
+          <i class="fa-solid fa-shapes"></i>
+          <span>Templates</span>
+        </button>
+
+        <button class="btn btn-secondary" id="btnOpenAssets" title="Manage images & project files">
+          <i class="fa-solid fa-images"></i>
+          <span>Assets</span>
+          <span class="badge-asset-count" id="assetCountBadge" style="display: none;">0</span>
+        </button>
+
+        <button class="btn btn-secondary" id="btnOpenAi" title="AI LaTeX Generator">
+          <i class="fa-solid fa-wand-magic-sparkles" style="color: #a78bfa;"></i>
+          <span>AI Assist</span>
+        </button>
+
+        <button class="btn btn-primary" id="btnCompile" title="Compile PDF (Ctrl+Enter or Shift+Enter)">
+          <i class="fa-solid fa-play"></i>
+          <span>Compile</span>
+        </button>
+
+        <div class="tool-dropdown">
+          <button class="btn btn-secondary" id="btnDownloadDropdown" title="Download Options">
+            <i class="fa-solid fa-download"></i>
+            <span>Export</span>
+            <i class="fa-solid fa-chevron-down caret"></i>
+          </button>
+          <div class="dropdown-menu" id="downloadDropdownMenu" style="right: 0; left: auto;">
+            <button class="dropdown-item" id="btnDownloadPdf" disabled>
+              <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i>
+              <span>Download PDF</span>
+            </button>
+            <button class="dropdown-item" id="btnExportTex">
+              <i class="fa-solid fa-file-code" style="color: #3b82f6;"></i>
+              <span>Download Source (.tex)</span>
+            </button>
+            <button class="dropdown-item" id="btnExportZip">
+              <i class="fa-solid fa-file-zipper" style="color: #10b981;"></i>
+              <span>Export Project ZIP (.zip)</span>
+            </button>
+            <button class="dropdown-item" id="btnPrintPdf" disabled>
+              <i class="fa-solid fa-print"></i>
+              <span>Print Document</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Universal Action Icons -->
+      <button class="btn btn-icon" id="btnShortcuts" title="Keyboard Shortcuts (?)">
+        <i class="fa-solid fa-keyboard"></i>
+      </button>
+
+      <button class="btn btn-icon" id="btnThemeToggle" title="Toggle Dark / Light Theme">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ======================================================================
+       VIEW 1: HYPERLEAF HOME / PRODUCT WEBSITE PLATFORM
+       ====================================================================== -->
+  <div class="dashboard-view" id="dashboardView">
+    <!-- Ambient Background Glows -->
+    <div class="site-ambient-glow glow-1"></div>
+    <div class="site-ambient-glow glow-2"></div>
+
+    <div class="website-container">
+      <!-- Hero Banner Section -->
+      <section class="website-hero">
+        <div class="hero-badge-pill">
+          <span class="hero-pulse-dot"></span>
+          <span>✦ Hyperleaf v3.5 • Sub-Millisecond XeTeX Engine • Zero Setup</span>
+        </div>
+
+        <h1 class="website-hero-title">
+          Write & Publish LaTeX at <span class="gradient-text">Lightspeed</span>
+        </h1>
+
+        <p class="website-hero-subtitle">
+          The next-generation LaTeX platform for researchers, authors, and engineers. Zero configuration, instant 0ms caching, continuous PDF.js canvas rendering, and verified non-overlapping TikZ graphics.
+        </p>
+
+        <div class="hero-actions-group">
+          <button class="btn btn-primary btn-hero-primary" id="btnHeroOpenStudio">
+            <i class="fa-solid fa-rocket"></i>
+            <span>Launch Studio Editor</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <a href="#sectionTemplates" class="btn btn-secondary btn-hero-secondary" id="btnHeroBrowseTemplates">
+            <i class="fa-solid fa-shapes"></i>
+            <span>Explore 8 Templates</span>
+          </a>
+          <button class="btn btn-secondary btn-hero-secondary" id="btnHeroNewProject">
+            <i class="fa-solid fa-plus"></i>
+            <span>New Document</span>
+          </button>
+        </div>
+
+        <div class="hero-spec-tags">
+          <span class="spec-tag"><i class="fa-solid fa-bolt" style="color: #10b981;"></i> 0ms Recompile Cache</span>
+          <span class="spec-tag"><i class="fa-solid fa-shield-halved" style="color: #818cf8;"></i> Sandboxed Untrusted Core</span>
+          <span class="spec-tag"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> Native PDF.js 4K Canvas</span>
+          <span class="spec-tag"><i class="fa-solid fa-bezier-curve" style="color: #06b6d4;"></i> Certified Non-Overlapping TikZ</span>
+        </div>
+
+        <!-- Full-Width Interactive IDE Window Mockup -->
+        <div class="hero-ide-window">
+          <div class="ide-window-bar">
+            <div class="ide-dots">
+              <span class="ide-dot red"></span>
+              <span class="ide-dot yellow"></span>
+              <span class="ide-dot green"></span>
+            </div>
+            <div class="ide-tabs">
+              <span class="ide-tab active"><i class="fa-solid fa-file-code"></i> main.tex</span>
+              <span class="ide-tab"><i class="fa-solid fa-image"></i> figure.png</span>
+              <span class="ide-tab"><i class="fa-solid fa-quote-right"></i> references.bib</span>
+            </div>
+            <div class="ide-status-badge">
+              <i class="fa-solid fa-bolt"></i>
+              <span>Compiled in 0ms (Cache hit)</span>
+            </div>
+          </div>
+
+          <div class="ide-window-body">
+            <!-- Left Code Column -->
+            <div class="ide-code-pane">
+              <div class="ide-code-gutter">
+                <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span>
+              </div>
+              <div class="ide-code-lines">
+                <div><span class="tok-kw">\documentclass</span>[11pt,a4paper]{article}</div>
+                <div><span class="tok-kw">\usepackage</span>{amsmath, amssymb, tikz}</div>
+                <div><span class="tok-comment">% Instant sub-millisecond continuous compilation</span></div>
+                <div><span class="tok-kw">\begin</span>{document}</div>
+                <div><span class="tok-kw">\section</span>{Unified Field Dynamics}</div>
+                <div>The invariant action integral is defined as:</div>
+                <div><span class="tok-kw">\begin</span>{equation}</div>
+                <div>&nbsp;&nbsp;\mathcal{S} = \int \left[ \frac{R}{2\kappa} + \mathcal{L}_{\mathrm{matter}} \right] \sqrt{-g} \, d^4x</div>
+                <div><span class="tok-kw">\end</span>{equation}</div>
+                <div><span class="tok-kw">\end</span>{document}</div>
+              </div>
+            </div>
+
+            <!-- Right Preview Column -->
+            <div class="ide-preview-pane">
+              <div class="sim-paper-sheet">
+                <div class="sim-paper-topbar"></div>
+                <div class="sim-paper-heading">Unified Field Dynamics</div>
+                <div class="sim-paper-author">Hyperleaf Research Laboratory • 2026</div>
+                <p class="sim-paper-text">The invariant action integral is defined as:</p>
+                <div class="sim-paper-formula">
+                  $$\mathcal{S} = \int \left[ \frac{R}{2\kappa} + \mathcal{L}_{\mathrm{matter}} \right] \sqrt{-g} \, d^4x$$
+                </div>
+                <div class="sim-paper-diagram">
+                  <div class="sim-diag-node">XeTeX Core</div>
+                  <div class="sim-diag-arrow">⟶ 0ms ⟶</div>
+                  <div class="sim-diag-node glow">Native PDF.js</div>
+                </div>
+                <div class="sim-paper-footer">
+                  <span>Page 1 of 1</span>
+                  <span class="sim-verified-tag"><i class="fa-solid fa-circle-check"></i> High-DPI Canvas</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Workspace Live Metrics Bar -->
+      <section class="metrics-bar">
+        <div class="metric-card">
+          <div class="metric-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">
+            <i class="fa-solid fa-folder-open"></i>
+          </div>
+          <div class="metric-info">
+            <span class="metric-val" id="metricTotalProjects">1</span>
+            <span class="metric-label">Active Workspace Documents</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <div class="metric-info">
+            <span class="metric-val highlight-green">0ms Instant</span>
+            <span class="metric-label">SHA-256 Cache Latency</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">
+            <i class="fa-solid fa-microchip"></i>
+          </div>
+          <div class="metric-info">
+            <span class="metric-val">Tectonic XeTeX</span>
+            <span class="metric-label">Sandboxed Core Engine</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="metric-info">
+            <span class="metric-val">Untrusted Safe</span>
+            <span class="metric-label">Isolated RAM & Disk</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: User Workspace Documents -->
+      <section class="website-section" id="sectionProjects">
+        <div class="section-title-bar">
+          <div>
+            <div class="section-kicker"><i class="fa-solid fa-folder-open"></i> WORKSPACE</div>
+            <h2 class="section-heading">Your Documents & Projects</h2>
+            <p class="section-subtext">Click any document to open immediately in the Studio IDE.</p>
+          </div>
+          <div class="section-actions">
+            <div class="dash-search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="dashSearchInput" placeholder="Filter documents... (Ctrl+K)">
+            </div>
+            <button class="btn btn-primary" id="btnDashNewProject">
+              <i class="fa-solid fa-plus"></i> New Document
+            </button>
+          </div>
+        </div>
+
+        <div class="dashboard-projects-grid" id="dashboardProjectsGrid">
+          <!-- Dynamically populated via renderDashboard() -->
+        </div>
+      </section>
+
+      <!-- Section: Starter Template Gallery -->
+      <section class="website-section" id="sectionTemplates">
+        <div class="section-title-bar">
+          <div>
+            <div class="section-kicker"><i class="fa-solid fa-shapes"></i> TEMPLATES</div>
+            <h2 class="section-heading">Instant Starter Templates</h2>
+            <p class="section-subtext">Pre-compiled with zero-latency caching and verified non-overlapping diagram geometry.</p>
+          </div>
+          <button class="btn btn-secondary" id="btnDashViewAllTemplates">
+            <i class="fa-solid fa-grid-2"></i> Browse All Templates
+          </button>
+        </div>
+
+        <div class="dashboard-templates-row" id="dashboardTemplatesRow">
+          <!-- Dynamically populated via renderDashboard() -->
+        </div>
+      </section>
+
+      <!-- Section: Interactive LaTeX Cheatsheet Widget -->
+      <section class="website-section" id="sectionCheatsheet">
+        <div class="section-title-bar">
+          <div>
+            <div class="section-kicker"><i class="fa-solid fa-book-bookmark"></i> CHEATSHEET</div>
+            <h2 class="section-heading">Interactive LaTeX Formula Lab</h2>
+            <p class="section-subtext">Click any snippet to copy directly to your clipboard.</p>
+          </div>
+          <div class="cheatsheet-tabs" id="cheatsheetCategoryTabs">
+            <button class="cs-tab active" data-cat="math">Math & Calculus</button>
+            <button class="cs-tab" data-cat="tikz">TikZ & Graphs</button>
+            <button class="cs-tab" data-cat="tables">Tables & Align</button>
+            <button class="cs-tab" data-cat="format">Formatting</button>
+          </div>
+        </div>
+
+        <div class="cheatsheet-snippets-grid" id="cheatsheetSnippetsGrid">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </section>
+
+      <!-- Section: Why Hyperleaf? Bento Grid Features -->
+      <section class="website-section" id="sectionFeatures">
+        <div class="section-title-bar" style="text-align: center; justify-content: center; flex-direction: column;">
+          <div class="section-kicker"><i class="fa-solid fa-wand-magic-sparkles"></i> ARCHITECTURE</div>
+          <h2 class="section-heading">Engineered for Maximum Speed & Precision</h2>
+          <p class="section-subtext">Designed from the ground up to eliminate the frustrations of traditional TeX workflows.</p>
+        </div>
+
+        <div class="feature-cards-grid">
+          <div class="feature-card">
+            <div class="feature-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.15);"><i class="fa-solid fa-gauge-high"></i></div>
+            <h3>0ms Smart Hash Cache</h3>
+            <p>Every keystroke and document hash is indexed in RAM and persistent disk cache. Unchanged code recompiles in zero milliseconds.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="color: #ef4444; background: rgba(239, 68, 68, 0.15);"><i class="fa-solid fa-file-pdf"></i></div>
+            <h3>Native PDF.js Canvas 4K</h3>
+            <p>Crisp multi-page rendering without clunky browser PDF plugin bugs, broken scrollbars, or blurry fonts.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="color: #06b6d4; background: rgba(6, 182, 212, 0.15);"><i class="fa-solid fa-images"></i></div>
+            <h3>Multi-Asset Figure Manager</h3>
+            <p>Drag and drop figures, images, and .bib bibliographies directly into your project with sandboxed resolution on the fly.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="color: #a78bfa; background: rgba(167, 139, 250, 0.15);"><i class="fa-solid fa-box-archive"></i></div>
+            <h3>1-Click Project ZIP Export</h3>
+            <p>Package complete research bundles with LaTeX sources, figures, assets, and compiled PDF ready for publication.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="color: #f59e0b; background: rgba(245, 158, 11, 0.15);"><i class="fa-solid fa-shield-halved"></i></div>
+            <h3>Sandboxed Untrusted Core</h3>
+            <p>Tectonic runs in strict isolated mode, preventing `\write18` shell escapes and directory traversals.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="color: #38bdf8; background: rgba(56, 189, 248, 0.15);"><i class="fa-solid fa-bezier-curve"></i></div>
+            <h3>Certified TikZ & PGFPlots</h3>
+            <p>Tested templates with generous coordinate clearance and orthogonal paths that never overlap.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom Call To Action Banner -->
+      <section class="website-cta-banner">
+        <div class="cta-banner-content">
+          <h2>Ready to experience hyper-fast LaTeX?</h2>
+          <p>Launch the studio right now in your browser. No TeX Live installation or account required.</p>
+          <button class="btn btn-primary btn-hero-primary" id="btnBottomLaunchStudio">
+            <i class="fa-solid fa-rocket"></i>
+            <span>Launch Hyperleaf Studio Now</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- Modern Website Footer -->
+      <footer class="website-footer">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <div class="brand-section">
+              <div class="brand-logo">
+                <img src="favicon.svg" alt="Hyperleaf Logo" width="22" height="22">
+              </div>
+              <span style="font-weight: 800; font-size: 1.05rem;">Hyperleaf</span>
+            </div>
+            <p>Next-generation LaTeX workspace with sub-millisecond compilation and native PDF.js rendering.</p>
+          </div>
+          <div class="footer-links-group">
+            <div class="footer-col">
+              <h4>Product</h4>
+              <a href="#sectionProjects">Documents</a>
+              <a href="#sectionTemplates">Templates</a>
+              <a href="#sectionCheatsheet">Cheatsheet</a>
+              <a href="#sectionFeatures">Features</a>
+            </div>
+            <div class="footer-col">
+              <h4>Technology</h4>
+              <span>Tectonic XeTeX</span>
+              <span>PDF.js Native</span>
+              <span>SHA-256 Cache</span>
+              <span>TikZ / PGFPlots</span>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>Hyperleaf v3.5 PRO • MIT Open Architecture</span>
+          <span>Press <kbd>?</kbd> for shortcuts • <kbd>Ctrl+Enter</kbd> to compile</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 2: HYPERLEAF STUDIO (SPLIT IDE)
+       ====================================================================== -->
+  <main class="studio-main" id="studioContainer" style="display: none;">
+
+    <!-- Document Outline Drawer -->
+    <aside class="outline-sidebar" id="outlineSidebar">
+      <div class="sidebar-header">
+        <span><i class="fa-solid fa-list-tree"></i> Document Outline</span>
+        <button class="sidebar-close-btn" id="btnCloseOutline"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="outline-list" id="outlineList">
+        <div class="empty-outline-hint">No \section or \chapter found yet.</div>
+      </div>
+    </aside>
+
+    <!-- Project Assets Drawer -->
+    <aside class="assets-sidebar" id="assetsSidebar">
+      <div class="sidebar-header">
+        <span><i class="fa-solid fa-folder-tree"></i> Project Assets & Images</span>
+        <button class="sidebar-close-btn" id="btnCloseAssets"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="assets-body">
+        <div class="asset-upload-dropzone" id="assetDropzone">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>Drop images (PNG, JPG) or .bib files</span>
+          <label class="btn btn-sm btn-secondary" style="margin-top: 6px; cursor: pointer;">
+            Browse Files
+            <input type="file" id="assetFileInput" multiple accept="image/*,.bib,.cls,.sty,.txt" style="display: none;">
+          </label>
+        </div>
+        <div class="assets-list" id="assetsListContainer"></div>
+      </div>
+    </aside>
+
+    <!-- Left Editor Pane -->
+    <section class="editor-pane" id="editorPane">
+      <!-- Editor Toolbar -->
+      <div class="editor-toolbar">
+        <div class="toolbar-group">
+          <!-- Toggle Outline button -->
+          <button class="tool-btn" id="btnToggleOutline" title="Toggle Table of Contents Outline">
+            <i class="fa-solid fa-bars-staggered"></i>
+            <span>Outline</span>
+          </button>
+
+          <div class="toolbar-separator"></div>
+
+          <!-- Math Dropdown -->
+          <div class="tool-dropdown">
+            <button class="tool-btn" id="btnMathDropdown" title="Insert Math Symbols & Equations">
+              <i class="fa-solid fa-square-root-variable"></i>
+              <span>Math</span>
+              <i class="fa-solid fa-chevron-down caret"></i>
+            </button>
+            <div class="dropdown-menu" id="mathDropdownMenu">
+              <button class="dropdown-item" data-insert="\frac{a}{b}">
+                <span>Fraction</span>
+                <span class="preview">\frac{a}{b}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\sqrt{x}">
+                <span>Square Root</span>
+                <span class="preview">\sqrt{x}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\int_{a}^{b} f(x) \, dx">
+                <span>Definite Integral</span>
+                <span class="preview">\int_{a}^{b}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\sum_{i=1}^{n} x_i">
+                <span>Summation</span>
+                <span class="preview">\sum_{i=1}^{n}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\lim_{x \to \infty} f(x)">
+                <span>Limit</span>
+                <span class="preview">\lim_{x \to \infty}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\begin{pmatrix} a & b \\ c & d \end{pmatrix}">
+                <span>2x2 Matrix</span>
+                <span class="preview">\begin{pmatrix}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\partial f / \partial x">
+                <span>Partial Derivative</span>
+                <span class="preview">\partial</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Environments Dropdown -->
+          <div class="tool-dropdown">
+            <button class="tool-btn" id="btnEnvDropdown" title="Insert LaTeX Environments">
+              <i class="fa-solid fa-cube"></i>
+              <span>Envs</span>
+              <i class="fa-solid fa-chevron-down caret"></i>
+            </button>
+            <div class="dropdown-menu" id="envDropdownMenu">
+              <button class="dropdown-item" data-insert="\begin{equation}&#10;    E = mc^2&#10;\end{equation}">
+                <span>Equation</span>
+                <span class="preview">\begin{equation}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\begin{align}&#10;    f(x) &= 2x + 1 \\&#10;    g(x) &= x^2&#10;\end{align}">
+                <span>Align Block</span>
+                <span class="preview">\begin{align}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\begin{figure}[h]&#10;\centering&#10;\includegraphics[width=0.8\textwidth]{filename.png}&#10;\caption{Figure description}&#10;\end{figure}">
+                <span>Figure (Image)</span>
+                <span class="preview">\begin{figure}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\begin{itemize}&#10;    \item First item&#10;    \item Second item&#10;\end{itemize}">
+                <span>Bullet List</span>
+                <span class="preview">\begin{itemize}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\begin{enumerate}&#10;    \item First step&#10;    \item Second step&#10;\end{enumerate}">
+                <span>Numbered List</span>
+                <span class="preview">\begin{enumerate}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\begin{table}[h]&#10;\centering&#10;\begin{tabular}{|c|c|}&#10;\hline&#10;Col 1 & Col 2 \\&#10;\hline&#10;Val A & Val B \\&#10;\hline&#10;\end{tabular}&#10;\end{table}">
+                <span>Table</span>
+                <span class="preview">\begin{table}</span>
+              </button>
+              <button class="dropdown-item" data-insert="\begin{tikzpicture}&#10;    \draw[thick, ->] (0,0) -- (3,0);&#10;\end{tikzpicture}">
+                <span>TikZ Canvas</span>
+                <span class="preview">\begin{tikzpicture}</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-separator"></div>
+
+          <!-- Quick Text Formatting -->
+          <button class="tool-btn" id="btnFormatBold" title="Bold: \textbf{...} (Ctrl+B)">
+            <i class="fa-solid fa-bold"></i>
+          </button>
+          <button class="tool-btn" id="btnFormatItalic" title="Italic: \textit{...} (Ctrl+I)">
+            <i class="fa-solid fa-italic"></i>
+          </button>
+          <button class="tool-btn" id="btnFormatMath" title="Inline Math: $...$ (Ctrl+$)">
+            <i class="fa-solid fa-dollar-sign"></i>
+          </button>
+          <button class="tool-btn" id="btnFormatComment" title="Toggle Comment: % (Ctrl+/)">
+            <i class="fa-solid fa-percent"></i>
+          </button>
+
+          <div class="toolbar-separator"></div>
+
+          <!-- Font Size & Wrap -->
+          <button class="tool-btn" id="btnFontDecrease" title="Decrease Editor Font Size">
+            <i class="fa-solid fa-minus" style="font-size: 0.65rem;"></i>
+            <span>A</span>
+          </button>
+          <button class="tool-btn" id="btnFontIncrease" title="Increase Editor Font Size">
+            <i class="fa-solid fa-plus" style="font-size: 0.65rem;"></i>
+            <span>A</span>
+          </button>
+          <button class="tool-btn" id="btnToggleWrap" title="Toggle Word Wrap (Alt+Z)">
+            <i class="fa-solid fa-arrow-turn-down" style="transform: rotate(90deg);"></i>
+            <span id="wrapStateText">Wrap</span>
+          </button>
+        </div>
+
+        <div class="toolbar-group">
+          <button class="tool-btn" id="btnFindReplace" title="Find & Replace (Ctrl+F)">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+          <button class="tool-btn" id="btnCopyCode" title="Copy All LaTeX Code">
+            <i class="fa-solid fa-copy"></i>
+          </button>
+          <button class="tool-btn" id="btnClearEditor" title="Clear Code Editor">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Code Editor Canvas -->
+      <div class="editor-container">
+        <div id="codeEditor"></div>
+      </div>
+
+      <!-- Editor Status Bar -->
+      <div class="editor-statusbar">
+        <div class="statusbar-left">
+          <span id="statusCursorPos"><i class="fa-regular fa-compass"></i> Ln 1, Col 1</span>
+          <span class="statusbar-divider">•</span>
+          <span id="statusDocMetrics">0 chars, 0 words</span>
+        </div>
+        <div class="statusbar-right">
+          <span>LaTeX (XeTeX)</span>
+          <span class="statusbar-divider">•</span>
+          <span>UTF-8</span>
+        </div>
+      </div>
+
+      <!-- Bottom Diagnostics Drawer -->
+      <div class="diagnostics-drawer" id="diagnosticsDrawer">
+        <div class="diagnostics-header" id="diagnosticsHeader">
+          <div class="diagnostics-title">
+            <i class="fa-solid fa-terminal"></i>
+            <span>Compiler Diagnostics</span>
+            <span class="badge-error-count" id="errorCountBadge" style="display: none;">0 errors</span>
+            <span class="badge-warning-count" id="warningCountBadge" style="display: none;">0 warnings</span>
+          </div>
+          <div class="diagnostics-controls">
+            <div class="diagnostics-tabs" id="diagnosticsTabs">
+              <button class="diag-tab active" data-tab="all">All</button>
+              <button class="diag-tab" data-tab="errors">Errors</button>
+              <button class="diag-tab" data-tab="log">Raw Log</button>
+            </div>
+            <span id="compilerTimeLabel">Ready</span>
+            <i class="fa-solid fa-chevron-up" id="diagnosticsChevron"></i>
+          </div>
+        </div>
+        <div class="diagnostics-body" id="diagnosticsContent">
+          <div class="empty-diag-hint">Compiler ready. Press 'Compile' (Ctrl+Enter) to build document.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resizer Splitter with double-click reset -->
+    <div class="splitter" id="paneSplitter" title="Drag to resize panes (Double-click to reset 50/50)">
+      <div class="splitter-handle"></div>
+    </div>
+
+    <!-- Right PDF Preview Pane -->
+    <section class="preview-pane" id="previewPane">
+      <!-- Preview Toolbar -->
+      <div class="preview-toolbar">
+        <div class="preview-status-group">
+          <span class="status-pill ready" id="previewStatusPill">
+            <i class="fa-solid fa-check"></i>
+            <span id="previewStatusText">Ready</span>
+          </span>
+          <span class="doc-info-text" id="docInfoText" style="display: none;"></span>
+        </div>
+
+        <div class="preview-controls-group">
+          <!-- Page Nav -->
+          <div class="page-nav" id="pageNavControls" style="display: none;">
+            <button class="tool-btn" id="btnPrevPage" title="Previous Page (PageUp / Left Arrow)">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="page-indicator" id="pageIndicator">Page 1 / 1</span>
+            <button class="tool-btn" id="btnNextPage" title="Next Page (PageDown / Right Arrow)">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+
+          <div class="toolbar-separator"></div>
+
+          <!-- Zoom Controls -->
+          <div class="zoom-controls">
+            <button class="tool-btn" id="btnZoomOut" title="Zoom Out (Ctrl + -)">
+              <i class="fa-solid fa-minus"></i>
+            </button>
+            <span class="zoom-level" id="zoomLevelDisplay">100%</span>
+            <button class="tool-btn" id="btnZoomIn" title="Zoom In (Ctrl + +)">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+            <button class="tool-btn" id="btnFitWidth" title="Fit to Page Width">
+              <i class="fa-solid fa-arrows-left-right-to-line"></i>
+              <span>Fit Width</span>
+            </button>
+            <button class="tool-btn" id="btnFitPage" title="Fit Entire Page in View">
+              <i class="fa-solid fa-compress"></i>
+              <span>Fit Page</span>
+            </button>
+          </div>
+
+          <div class="toolbar-separator"></div>
+
+          <!-- Paper Theme Toggle -->
+          <button class="tool-btn" id="btnPaperTheme" title="Toggle Clean White Paper / Dark Inverted Mode">
+            <i class="fa-solid fa-circle-half-stroke"></i>
+            <span id="paperThemeLabel">Paper</span>
+          </button>
+
+          <!-- Pop-out in New Window -->
+          <button class="tool-btn" id="btnOpenNewTab" title="Open PDF in Full Browser Tab" disabled>
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview Viewport Canvas Scroll Container -->
+      <div class="preview-viewport" id="previewViewport">
+        <!-- Compiling Animation Overlay -->
+        <div class="compiling-overlay" id="compilingOverlay">
+          <div class="spinner-ring">
+            <div></div><div></div><div></div><div></div>
+          </div>
+          <div class="compiling-text" id="compilingOverlayText">Compiling LaTeX Document...</div>
+          <div class="compiling-subtext">Sandboxed XeTeX processing • Auto-caching</div>
+          <button class="btn btn-secondary btn-sm" id="btnCancelCompilation" style="margin-top: 10px;">
+            <i class="fa-solid fa-xmark"></i>
+            <span>Cancel</span>
+          </button>
+        </div>
+
+        <!-- Initial Placeholder State -->
+        <div class="preview-placeholder" id="previewPlaceholder">
+          <div class="preview-placeholder-icon">
+            <i class="fa-solid fa-file-pdf"></i>
+          </div>
+          <h3>Document Preview</h3>
+          <p>Click <strong>"Compile"</strong> above or press <kbd>Ctrl+Enter</kbd> to render your document in ultra-sharp resolution.</p>
+        </div>
+
+        <!-- Rendered PDF Pages Container (Native PDF.js Canvas continuous scroll) -->
+        <div class="pdf-pages-container" id="pdfPagesContainer" style="display: none;"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Splitter Drag Shield -->
+  <div class="splitter-shield" id="splitterShield"></div>
+
+  <!-- Projects Management Modal -->
+  <div class="modal-backdrop" id="projectsModal">
+    <div class="modal-box" style="max-width: 780px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2>Project Manager</h2>
+          <p>Create, duplicate, rename, or switch between your LaTeX documents</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary" id="btnCreateNewProjectModal">
+            <i class="fa-solid fa-plus"></i>
+            <span>New Project</span>
+          </button>
+          <button class="modal-close" id="btnCloseProjectsModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="projects-grid" id="projectsFullGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Templates Gallery Modal -->
+  <div class="modal-backdrop" id="templatesModal">
+    <div class="modal-box templates-modal-box">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2>LaTeX Template Library</h2>
+          <p>Pre-compiled for instantaneous 0ms loading & preview</p>
+        </div>
+        <button class="modal-close" id="btnCloseTemplates">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="templates-filter-bar">
+          <div class="template-search-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="templateSearchInput" placeholder="Search templates by name, package (TikZ, PGFPlots), or type...">
+          </div>
+          <div class="templates-categories" id="templateCategoryFilters">
+            <button class="category-tab active" data-category="all">All</button>
+            <button class="category-tab" data-category="Resumes & CVs">Resumes & CVs</button>
+            <button class="category-tab" data-category="Diagrams & Flowcharts">Diagrams & Flowcharts</button>
+            <button class="category-tab" data-category="Charts & Graphs">Charts & Graphs</button>
+            <button class="category-tab" data-category="Math & Equations">Math & Equations</button>
+            <button class="category-tab" data-category="Academic & Reports">Academic & Reports</button>
+          </div>
+        </div>
+
+        <div class="templates-grid" id="templatesGridContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI LaTeX Generator Modal -->
+  <div class="modal-backdrop" id="aiModal">
+    <div class="modal-box" style="max-width: 640px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2>AI LaTeX Assistant</h2>
+          <p>Describe whatever document, diagram, or formula you need</p>
+        </div>
+        <button class="modal-close" id="btnCloseAi">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <textarea class="ai-prompt-box" id="aiPromptInput" placeholder="E.g., 'Generate an ATS software engineer resume' or 'Flowchart for user login and 2FA authentication' or 'Damped harmonic oscillator plot'"></textarea>
+
+        <div class="prompt-suggestions-title">Instant Prompts:</div>
+        <div class="prompt-suggestions">
+          <span class="prompt-chip" data-prompt="Create a modern ATS software engineer resume">Modern Software Resume</span>
+          <span class="prompt-chip" data-prompt="Flowchart for user authentication with 2FA">User 2FA Flowchart</span>
+          <span class="prompt-chip" data-prompt="Plot a damped sine wave oscillation curve">Damped Sine Wave Plot</span>
+          <span class="prompt-chip" data-prompt="Deep learning neural network architecture diagram">Neural Network Graph</span>
+          <span class="prompt-chip" data-prompt="Maxwell equations and Gaussian integral theorem">Physics Field Equations</span>
+          <span class="prompt-chip" data-prompt="Comparative grouped bar chart for latency">Database Latency Bar Chart</span>
+          <span class="prompt-chip" data-prompt="Two-column academic research paper">Academic IEEE Paper</span>
+          <span class="prompt-chip" data-prompt="Hierarchical artificial intelligence mind map">AI Mind Map</span>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btnCancelAi">Cancel</button>
+          <button class="btn btn-primary" id="btnGenerateAi">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Generate & Insert</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div class="modal-backdrop" id="shortcutsModal">
+    <div class="modal-box" style="max-width: 540px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2>Keyboard Shortcuts</h2>
+          <p>Boost your productivity with pro-level shortcuts</p>
+        </div>
+        <button class="modal-close" id="btnCloseShortcuts">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <table class="shortcuts-table">
+          <tbody>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>Enter</kbd> / <kbd>Shift</kbd> + <kbd>Enter</kbd></td>
+              <td>Compile Document to PDF</td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>S</kbd></td>
+              <td>Export .tex Source File</td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>F</kbd></td>
+              <td>Search & Replace in Code</td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>/</kbd></td>
+              <td>Toggle Comment (%) on Selection</td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>B</kbd></td>
+              <td>Wrap selection in <code>\textbf{...}</code></td>
+            </tr>
+            <tr>
+              <td><kbd>Ctrl</kbd> + <kbd>I</kbd></td>
+              <td>Wrap selection in <code>\textit{...}</code></td>
+            </tr>
+            <tr>
+              <td><kbd>Alt</kbd> + <kbd>Z</kbd></td>
+              <td>Toggle Word Wrap</td>
+            </tr>
+            <tr>
+              <td><kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></td>
+              <td>Indent / Outdent selection</td>
+            </tr>
+            <tr>
+              <td><kbd>Double-Click</kbd> on Splitter</td>
+              <td>Reset Editor / Preview to 50/50 balance</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- App Scripts -->
+  <script src="templates.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
