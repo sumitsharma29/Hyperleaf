@@ -51,18 +51,18 @@
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Client Browser (Modern Web Interface)"]
+    subgraph Client ["Client Browser"]
         UI["Hyperleaf Website Landing / Dashboard"] -->|Launch Studio| Editor["Ace Code Editor (LaTeX Mode)"]
         Editor -->|Auto-compile / Ctrl+Enter| ClientCache["Client Hash Cache"]
         ClientCache -->|Cache Miss| APIReq["POST /api/compile (JSON + Assets)"]
-        PDFRenderer["Native PDF.js Multi-Page Canvas"] <--|Base64 PDF Stream| APIReq
+        APIReq -->|Base64 PDF Stream| PDFRenderer["Native PDF.js Multi-Page Canvas"]
     end
 
     subgraph Server ["Node.js Express Compiler Backend"]
         APIReq --> Security["Rate Limiter (60 req/min) & Security Headers"]
-        Security --> HashCalc["SHA-256 Composite Hasher (Code + Assets)"]
+        Security --> HashCalc["SHA-256 Composite Hasher"]
         HashCalc --> MemCache{"In-Memory LRU Cache?"}
-        MemCache -->|Hit 0ms| FastReturn["Return Cached PDF (<1ms)"]
+        MemCache -->|Hit 0ms| FastReturn["Return Cached PDF (0ms)"]
         MemCache -->|Miss| DiskCache{"Disk Cache /cache/pdf?"}
         DiskCache -->|Hit 1ms| FastReturn
         DiskCache -->|Miss| Sandbox["Spawn Isolated Workspace (/tmp)"]
